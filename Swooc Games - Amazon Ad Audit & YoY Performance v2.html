@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swooc Games - Amazon Ad Audit & YoY Performance Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0b0f19',
+                        cardbg: '#111827',
+                        cardborder: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0b0f19; color: #f3f4f6; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #111827; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; background-color: rgba(59, 130, 246, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-gray-800 bg-gray-900/80 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
+                    <i class="fa-solid fa-gamepad text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-tight">Swooc Games — Amazon Ad Audit & YoY Performance</h1>
+                    <p class="text-xs text-gray-400">September 2025 vs. September 2026 Audit Report • Complete Portfolio (61 SKUs)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="exportCSV()" class="px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium rounded-lg border border-gray-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Export Full CSV
+                </button>
+                <div class="px-3 py-1.5 bg-blue-950/60 border border-blue-800/50 text-blue-300 text-xs rounded-lg flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                    Portfolio SKUs: 61 Active
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div class="flex border-b border-gray-800 gap-2 overflow-x-auto custom-scrollbar">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-3 text-sm font-medium text-gray-400 hover:text-white transition flex items-center gap-2 rounded-t-lg">
+                <i class="fa-solid fa-sliders"></i> Executive Overview
+            </button>
+            <button onclick="switchTab('master-table')" id="tab-master-table" class="tab-btn px-4 py-3 text-sm font-medium text-gray-400 hover:text-white transition flex items-center gap-2 rounded-t-lg">
+                <i class="fa-solid fa-table-list"></i> SKU YoY Performance
+            </button>
+            <button onclick="switchTab('traffic-metrics')" id="tab-traffic-metrics" class="tab-btn px-4 py-3 text-sm font-medium text-gray-400 hover:text-white transition flex items-center gap-2 rounded-t-lg">
+                <i class="fa-solid fa-eye text-cyan-400"></i> Impressions, CVR & CTR
+            </button>
+            <button onclick="switchTab('new-launches')" id="tab-new-launches" class="tab-btn px-4 py-3 text-sm font-medium text-gray-400 hover:text-white transition flex items-center gap-2 rounded-t-lg">
+                <i class="fa-solid fa-rocket text-emerald-400"></i> New Launch SKUs
+            </button>
+            <button onclick="switchTab('spend-decliners')" id="tab-spend-decliners" class="tab-btn px-4 py-3 text-sm font-medium text-gray-400 hover:text-white transition flex items-center gap-2 rounded-t-lg">
+                <i class="fa-solid fa-arrow-trend-down text-rose-400"></i> Spend Decliners (41 SKUs)
+            </button>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+
+        <!-- TAB 1: EXECUTIVE OVERVIEW -->
+        <div id="content-overview" class="space-y-6">
+            <div class="p-5 bg-gradient-to-r from-gray-900 via-gray-900 to-blue-950/40 border border-blue-900/40 rounded-xl shadow-lg">
+                <div class="flex items-start gap-4">
+                    <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+                        <i class="fa-solid fa-lightbulb text-xl"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider">Executive Audit Summary: Key Findings</h3>
+                        <p class="text-sm text-gray-300 leading-relaxed">
+                            Overall portfolio revenue and ad spend both decreased while aggregate campaign ACOS remained flat at <span class="font-bold text-white">30.51%</span>. 
+                            The audit reveals <span class="font-bold text-white">41 out of 61 SKUs</span> underwent intentional advertising spend cuts totaling <span class="font-bold text-rose-400">-$58.06K</span>. 
+                            While campaign efficiency was preserved on paper, reduced spend led to top-of-funnel impression contraction and overall sales losses of <span class="font-bold text-rose-400">-$167.53K</span> across those SKUs, partially offset by <span class="font-bold text-emerald-400">+$37.14K</span> in new product launches.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scorecards Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div class="p-4 bg-gray-900 border border-gray-800 rounded-xl">
+                    <span class="text-xs text-gray-400">Overall Sales</span>
+                    <div class="text-lg font-bold text-white mt-1">$571,239</div>
+                    <div class="text-xs text-rose-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-arrow-down"></i> -16.65% YoY</div>
+                </div>
+                <div class="p-4 bg-gray-900 border border-gray-800 rounded-xl">
+                    <span class="text-xs text-gray-400">Ad Sales</span>
+                    <div class="text-lg font-bold text-white mt-1">$316,303</div>
+                    <div class="text-xs text-rose-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-arrow-down"></i> -30.71% YoY</div>
+                </div>
+                <div class="p-4 bg-gray-900 border border-gray-800 rounded-xl">
+                    <span class="text-xs text-gray-400">Ad Spend</span>
+                    <div class="text-lg font-bold text-white mt-1">$96,502</div>
+                    <div class="text-xs text-rose-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-arrow-down"></i> -30.72% YoY</div>
+                </div>
+                <div class="p-4 bg-gray-900 border border-gray-800 rounded-xl">
+                    <span class="text-xs text-gray-400">Orders</span>
+                    <div class="text-lg font-bold text-white mt-1">4,371</div>
+                    <div class="text-xs text-rose-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-arrow-down"></i> -27.28% YoY</div>
+                </div>
+                <div class="p-4 bg-gray-900 border border-gray-800 rounded-xl">
+                    <span class="text-xs text-gray-400">ACOS</span>
+                    <div class="text-lg font-bold text-emerald-400 mt-1">30.51%</div>
+                    <div class="text-xs text-gray-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-minus"></i> 0.00% Flat</div>
+                </div>
+                <div class="p-4 bg-gray-900 border border-gray-800 rounded-xl">
+                    <span class="text-xs text-gray-400">TACoS</span>
+                    <div class="text-lg font-bold text-emerald-400 mt-1">16.89%</div>
+                    <div class="text-xs text-emerald-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-arrow-down"></i> -3.43% pts</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="p-5 bg-gray-900 border border-gray-800 rounded-xl">
+                    <h3 class="text-sm font-semibold text-gray-200 mb-1">Top SKUs with Largest Ad Budget Reductions</h3>
+                    <p class="text-xs text-gray-400 mb-4">Comparing YoY Ad Spend cuts ($)</p>
+                    <div class="h-64"><canvas id="chartSpendCuts"></canvas></div>
+                </div>
+                <div class="p-5 bg-gray-900 border border-gray-800 rounded-xl">
+                    <h3 class="text-sm font-semibold text-gray-200 mb-1">Impact on Overall Sales for Spend-Cut SKUs</h3>
+                    <p class="text-xs text-gray-400 mb-4">YoY Overall Revenue drops vs. 2025 baseline ($)</p>
+                    <div class="h-64"><canvas id="chartRevenueImpact"></canvas></div>
+                </div>
+                <div class="p-5 bg-gray-900 border border-gray-800 rounded-xl">
+                    <h3 class="text-sm font-semibold text-gray-200 mb-1">Impressions & Traffic Reduction</h3>
+                    <p class="text-xs text-gray-400 mb-4">Top-of-Funnel Impression Drop by SKU</p>
+                    <div class="h-64"><canvas id="chartImpressions"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: SKU YoY PERFORMANCE MASTER AUDIT -->
+        <div id="content-master-table" class="hidden space-y-4">
+            <div class="p-5 bg-gray-900 border border-gray-800 rounded-xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-table-list text-blue-400"></i> SKU Level YoY Performance Master Audit
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Includes Overall Sales & TACoS • Sorted by <span class="text-blue-400 font-semibold">2025 Ad Revenue</span> descending</p>
+                    </div>
+                    <div class="relative w-full md:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-500 text-xs"></i>
+                        <input type="text" id="search-master" onkeyup="filterMasterTable()" placeholder="Search SKU..." class="w-full pl-8 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar border border-gray-800 rounded-lg">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-gray-800/80 text-gray-400 uppercase font-semibold text-[10px] tracking-wider border-b border-gray-700">
+                            <tr>
+                                <th class="p-3">SKU Name</th>
+                                <th class="p-3 text-right">2025 Spend</th>
+                                <th class="p-3 text-right">2026 Spend</th>
+                                <th class="p-3 text-right">Spend Diff</th>
+                                <th class="p-3 text-right">2025 ACOS</th>
+                                <th class="p-3 text-right">2026 ACOS</th>
+                                <th class="p-3 text-right text-emerald-400">2025 TACoS</th>
+                                <th class="p-3 text-right text-emerald-400">2026 TACoS</th>
+                                <th class="p-3 text-right text-blue-400">2025 Ad Sales</th>
+                                <th class="p-3 text-right">2026 Ad Sales</th>
+                                <th class="p-3 text-right">2025 Overall Sales</th>
+                                <th class="p-3 text-right">2026 Overall Sales</th>
+                                <th class="p-3 text-right">Overall Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-table-body" class="divide-y divide-gray-800/60 font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: TRAFFIC & AD EFFICIENCY METRICS (2 Decimal Places for CTR & CVR) -->
+        <div id="content-traffic-metrics" class="hidden space-y-4">
+            <div class="p-5 bg-gray-900 border border-gray-800 rounded-xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-eye text-cyan-400"></i> Traffic, CVR & CTR Performance
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Top-of-funnel impressions and conversion efficiency (2 decimal places) • Sorted by <span class="text-blue-400 font-semibold">2025 Ad Revenue</span> descending</p>
+                    </div>
+                    <div class="relative w-full md:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-500 text-xs"></i>
+                        <input type="text" id="search-traffic" onkeyup="filterTrafficTable()" placeholder="Search SKU..." class="w-full pl-8 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar border border-gray-800 rounded-lg">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-gray-800/80 text-gray-400 uppercase font-semibold text-[10px] tracking-wider border-b border-gray-700">
+                            <tr>
+                                <th class="p-3">SKU Name</th>
+                                <th class="p-3 text-right">2025 Impressions</th>
+                                <th class="p-3 text-right">2026 Impressions</th>
+                                <th class="p-3 text-right">Imp Diff</th>
+                                <th class="p-3 text-right text-cyan-400">2025 CTR</th>
+                                <th class="p-3 text-right text-cyan-400">2026 CTR</th>
+                                <th class="p-3 text-right text-cyan-400">CTR Diff</th>
+                                <th class="p-3 text-right text-amber-400">2025 CVR</th>
+                                <th class="p-3 text-right text-amber-400">2026 CVR</th>
+                                <th class="p-3 text-right text-amber-400">CVR Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody id="traffic-table-body" class="divide-y divide-gray-800/60 font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: NEW LAUNCH SKUS -->
+        <div id="content-new-launches" class="hidden space-y-4">
+            <div class="p-5 bg-gray-900 border border-gray-800 rounded-xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-rocket text-emerald-400"></i> New Product Launches Performance (2026)
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">SKUs introduced in 2026 with $0 baseline in 2025</p>
+                    </div>
+                    <div class="px-3 py-1 bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 text-xs rounded-lg">Total New Revenue: +$37,138.48</div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar border border-gray-800 rounded-lg">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-gray-800/80 text-gray-400 uppercase font-semibold text-[10px] tracking-wider border-b border-gray-700">
+                            <tr>
+                                <th class="p-3">SKU Name</th>
+                                <th class="p-3 text-right">2026 Overall Sales</th>
+                                <th class="p-3 text-right">2026 Ad Sales</th>
+                                <th class="p-3 text-right">2026 Ad Spend</th>
+                                <th class="p-3 text-right">2026 ACOS</th>
+                                <th class="p-3 text-right">2026 TACoS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="new-launches-table-body" class="divide-y divide-gray-800/60 font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: SPEND DECLINERS AUDIT -->
+        <div id="content-spend-decliners" class="hidden space-y-4">
+            <div class="p-5 bg-gray-900 border border-gray-800 rounded-xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-trend-down text-rose-400"></i> Audit Table: 41 SKUs with Reduced Ad Spend
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Sorted by largest ad spend reduction ($)</p>
+                    </div>
+                    <div class="relative w-full md:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-500 text-xs"></i>
+                        <input type="text" id="search-decliners" onkeyup="filterDeclinersTable()" placeholder="Filter SKU..." class="w-full pl-8 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar border border-gray-800 rounded-lg">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-gray-800/80 text-gray-400 uppercase font-semibold text-[10px] tracking-wider border-b border-gray-700">
+                            <tr>
+                                <th class="p-3">SKU Name</th>
+                                <th class="p-3 text-right">2025 Spend</th>
+                                <th class="p-3 text-right">2026 Spend</th>
+                                <th class="p-3 text-right text-rose-400">Spend Cut ($)</th>
+                                <th class="p-3 text-right">2025 ACOS</th>
+                                <th class="p-3 text-right">2026 ACOS</th>
+                                <th class="p-3 text-right">2025 Overall Rev</th>
+                                <th class="p-3 text-right">2026 Overall Rev</th>
+                                <th class="p-3 text-right">Rev Diff ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="decliners-table-body" class="divide-y divide-gray-800/60 font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const rawData = [
+            {"sku": "K-DARTS", "spend_2025": 11095.46, "spend_2026": 3709.54, "spend_diff": -7385.92, "acos_2025": 25.8, "acos_2026": 16.74, "acos_diff": -9.06, "tacos_2025": 15.03, "tacos_2026": 7.15, "tacos_diff": -7.88, "ad_sales_2025": 43004.33, "ad_sales_2026": 22158.21, "ad_sales_diff": -20846.12, "overall_sales_2025": 73833.4, "overall_sales_2026": 51881.02, "overall_sales_diff": -21952.38, "imp_2025": 2241022, "imp_2026": 878345, "imp_diff": -1362677, "ctr_2025": 0.51, "ctr_2026": 0.44, "ctr_diff": -0.07, "cvr_2025": 2.54, "cvr_2026": 3.93, "cvr_diff": 1.39, "is_new": false, "is_spend_down": true},
+            {"sku": "RING-TOSS", "spend_2025": 13714.55, "spend_2026": 9913.9, "spend_diff": -3800.65, "acos_2025": 32.54, "acos_2026": 30.84, "acos_diff": -1.7, "tacos_2025": 34.81, "tacos_2026": 24.4, "tacos_diff": -10.41, "ad_sales_2025": 42144.17, "ad_sales_2026": 32151.45, "ad_sales_diff": -9992.72, "overall_sales_2025": 39398.95, "overall_sales_2026": 40632.33, "overall_sales_diff": 1233.38, "imp_2025": 1871902, "imp_2026": 1804386, "imp_diff": -67516, "ctr_2025": 0.49, "ctr_2026": 0.41, "ctr_diff": -0.08, "cvr_2025": 9.17, "cvr_2026": 9.33, "cvr_diff": 0.16, "is_new": false, "is_spend_down": true},
+            {"sku": "GIANT-AXE-DARTS", "spend_2025": 10648.92, "spend_2026": 2958.28, "spend_diff": -7690.64, "acos_2025": 26.77, "acos_2026": 22.63, "acos_diff": -4.14, "tacos_2025": 16.73, "tacos_2026": 12.93, "tacos_diff": -3.8, "ad_sales_2025": 39774.83, "ad_sales_2026": 13073.23, "ad_sales_diff": -26701.6, "overall_sales_2025": 63658.82, "overall_sales_2026": 22876.57, "overall_sales_diff": -40782.25, "imp_2025": 1999457, "imp_2026": 820124, "imp_diff": -1179333, "ctr_2025": 0.45, "ctr_2026": 0.35, "ctr_diff": -0.1, "cvr_2025": 2.81, "cvr_2026": 2.95, "cvr_diff": 0.14, "is_new": false, "is_spend_down": true},
+            {"sku": "GIANT-GOLF-DARTS", "spend_2025": 8789.79, "spend_2026": 3223.42, "spend_diff": -5566.37, "acos_2025": 25.63, "acos_2026": 22.93, "acos_diff": -2.7, "tacos_2025": 18.11, "tacos_2026": 15.58, "tacos_diff": -2.53, "ad_sales_2025": 34295.84, "ad_sales_2026": 14059.61, "ad_sales_diff": -20236.23, "overall_sales_2025": 48531.23, "overall_sales_2026": 20695.38, "overall_sales_diff": -27835.85, "imp_2025": 1871584, "imp_2026": 855210, "imp_diff": -1016374, "ctr_2025": 0.49, "ctr_2026": 0.38, "ctr_diff": -0.11, "cvr_2025": 2.69, "cvr_2026": 2.89, "cvr_diff": 0.2, "is_new": false, "is_spend_down": true},
+            {"sku": "GIANT-4", "spend_2025": 8887.12, "spend_2026": 8810.05, "spend_diff": -77.07, "acos_2025": 25.98, "acos_2026": 25.02, "acos_diff": -0.96, "tacos_2025": 21.68, "tacos_2026": 23.03, "tacos_diff": 1.35, "ad_sales_2025": 34204.13, "ad_sales_2026": 35207.68, "ad_sales_diff": 1003.55, "overall_sales_2025": 40986.26, "overall_sales_2026": 38257.89, "overall_sales_diff": -2728.37, "imp_2025": 1202686, "imp_2026": 1232620, "imp_diff": 29934, "ctr_2025": 0.49, "ctr_2026": 0.46, "ctr_diff": -0.03, "cvr_2025": 4.68, "cvr_2026": 5.03, "cvr_diff": 0.35, "is_new": false, "is_spend_down": true},
+            {"sku": "LY-RECLAIMED", "spend_2025": 6725.71, "spend_2026": 1856.61, "spend_diff": -4869.1, "acos_2025": 22.2, "acos_2026": 15.15, "acos_diff": -7.05, "tacos_2025": 15.41, "tacos_2026": 7.85, "tacos_diff": -7.56, "ad_sales_2025": 30300.28, "ad_sales_2026": 12254.93, "ad_sales_diff": -18045.35, "overall_sales_2025": 43650.36, "overall_sales_2026": 23658.31, "overall_sales_diff": -19992.05, "imp_2025": 1542310, "imp_2026": 621450, "imp_diff": -920860, "ctr_2025": 0.41, "ctr_2026": 0.32, "ctr_diff": -0.09, "cvr_2025": 3.52, "cvr_2026": 4.62, "cvr_diff": 1.1, "is_new": false, "is_spend_down": true},
+            {"sku": "CONEY-TOSS", "spend_2025": 9867.87, "spend_2026": 8920.45, "spend_diff": -947.42, "acos_2025": 34.9, "acos_2026": 35.29, "acos_diff": 0.39, "tacos_2025": 21.62, "tacos_2026": 17.96, "tacos_diff": -3.66, "ad_sales_2025": 28278.55, "ad_sales_2026": 25277.47, "ad_sales_diff": -3001.08, "overall_sales_2025": 45641.94, "overall_sales_2026": 49671.72, "overall_sales_diff": 4029.78, "imp_2025": 2029166, "imp_2026": 1836445, "imp_diff": -192721, "ctr_2025": 0.4, "ctr_2026": 0.35, "ctr_diff": -0.05, "cvr_2025": 4.8, "cvr_2026": 6.03, "cvr_diff": 1.23, "is_new": false, "is_spend_down": true},
+            {"sku": "DINO-FRENZY", "spend_2025": 7473.98, "spend_2026": 4998.82, "spend_diff": -2475.16, "acos_2025": 38.23, "acos_2026": 50.24, "acos_diff": 12.01, "tacos_2025": 26.95, "tacos_2026": 28.06, "tacos_diff": 1.11, "ad_sales_2025": 19547.98, "ad_sales_2026": 9950.35, "ad_sales_diff": -9597.63, "overall_sales_2025": 27737.13, "overall_sales_2026": 17814.41, "overall_sales_diff": -9922.72, "imp_2025": 3155111, "imp_2026": 2328032, "imp_diff": -827079, "ctr_2025": 0.36, "ctr_2026": 0.25, "ctr_diff": -0.11, "cvr_2025": 4.7, "cvr_2026": 4.61, "cvr_diff": -0.09, "is_new": false, "is_spend_down": true},
+            {"sku": "GIANT-4-XL", "spend_2025": 4689.99, "spend_2026": 2271.48, "spend_diff": -2418.51, "acos_2025": 27.99, "acos_2026": 14.61, "acos_diff": -13.38, "tacos_2025": 9.76, "tacos_2026": 4.69, "tacos_diff": -5.07, "ad_sales_2025": 16756.89, "ad_sales_2026": 15552.42, "ad_sales_diff": -1204.47, "overall_sales_2025": 48067.76, "overall_sales_2026": 48387.26, "overall_sales_diff": 319.5, "imp_2025": 1571658, "imp_2026": 765324, "imp_diff": -806334, "ctr_2025": 0.33, "ctr_2026": 0.23, "ctr_diff": -0.1, "cvr_2025": 1.73, "cvr_2026": 4.35, "cvr_diff": 2.62, "is_new": false, "is_spend_down": true},
+            {"sku": "B-BALL-CONNECT-4-WALL", "spend_2025": 4021.55, "spend_2026": 2876.81, "spend_diff": -1144.74, "acos_2025": 32.85, "acos_2026": 47.52, "acos_diff": 14.67, "tacos_2025": 30.62, "tacos_2026": 30.22, "tacos_diff": -0.4, "ad_sales_2025": 12242.27, "ad_sales_2026": 6054.12, "ad_sales_diff": -6188.15, "overall_sales_2025": 13133.51, "overall_sales_2026": 9518.84, "overall_sales_diff": -3614.67, "imp_2025": 816710, "imp_2026": 521014, "imp_diff": -295696, "ctr_2025": 0.81, "ctr_2026": 0.95, "ctr_diff": 0.14, "cvr_2025": 1.37, "cvr_2026": 1.05, "cvr_diff": -0.32, "is_new": false, "is_spend_down": true},
+            {"sku": "FISH-SHARK-TOSS", "spend_2025": 3760.57, "spend_2026": 2166.65, "spend_diff": -1593.92, "acos_2025": 33.52, "acos_2026": 37.18, "acos_diff": 3.66, "tacos_2025": 24.96, "tacos_2026": 19.9, "tacos_diff": -5.06, "ad_sales_2025": 11217.89, "ad_sales_2026": 5827.02, "ad_sales_diff": -5390.87, "overall_sales_2025": 15068.78, "overall_sales_2026": 10887.45, "overall_sales_diff": -4181.33, "imp_2025": 728147, "imp_2026": 554172, "imp_diff": -173975, "ctr_2025": 0.47, "ctr_2026": 0.31, "ctr_diff": -0.16, "cvr_2025": 8.85, "cvr_2026": 9.29, "cvr_diff": 0.44, "is_new": false, "is_spend_down": true},
+            {"sku": "YRDZ-WOOD-SML", "spend_2025": 2315.61, "spend_2026": 1463.8, "spend_diff": -851.81, "acos_2025": 24.25, "acos_2026": 34.86, "acos_diff": 10.61, "tacos_2025": 40.25, "tacos_2026": 23.24, "tacos_diff": -17.01, "ad_sales_2025": 9549.02, "ad_sales_2026": 4199.18, "ad_sales_diff": -5349.84, "overall_sales_2025": 5752.4, "overall_sales_2026": 6298.95, "overall_sales_diff": 546.55, "imp_2025": 454318, "imp_2026": 335410, "imp_diff": -118908, "ctr_2025": 0.65, "ctr_2026": 0.48, "ctr_diff": -0.17, "cvr_2025": 4.03, "cvr_2026": 4.12, "cvr_diff": 0.09, "is_new": false, "is_spend_down": true},
+            {"sku": "TIC-WOOD-BEAN-BAG", "spend_2025": 2310.45, "spend_2026": 1444.88, "spend_diff": -865.57, "acos_2025": 25.69, "acos_2026": 30.29, "acos_diff": 4.6, "tacos_2025": 22.69, "tacos_2026": 16.06, "tacos_diff": -6.63, "ad_sales_2025": 8992.64, "ad_sales_2026": 4770.26, "ad_sales_diff": -4222.38, "overall_sales_2025": 10184.19, "overall_sales_2026": 8997.82, "overall_sales_diff": -1186.37, "imp_2025": 490512, "imp_2026": 381014, "imp_diff": -109498, "ctr_2025": 0.58, "ctr_2026": 0.42, "ctr_diff": -0.16, "cvr_2025": 5.43, "cvr_2026": 6.13, "cvr_diff": 0.7, "is_new": false, "is_spend_down": true},
+            {"sku": "MAT-CHK-TIC", "spend_2025": 2165.81, "spend_2026": 3128.44, "spend_diff": 962.63, "acos_2025": 27.76, "acos_2026": 48.04, "acos_diff": 20.28, "tacos_2025": 18.25, "tacos_2026": 28.24, "tacos_diff": 9.99, "ad_sales_2025": 7801.69, "ad_sales_2026": 6512.19, "ad_sales_diff": -1289.5, "overall_sales_2025": 11870.29, "overall_sales_2026": 11077.24, "overall_sales_diff": -793.05, "imp_2025": 612410, "imp_2026": 814520, "imp_diff": 202110, "ctr_2025": 0.45, "ctr_2026": 0.41, "ctr_diff": -0.04, "cvr_2025": 5.08, "cvr_2026": 3.86, "cvr_diff": -1.22, "is_new": false, "is_spend_down": false},
+            {"sku": "LY-J-SHOTS", "spend_2025": 2666.73, "spend_2026": 1339.33, "spend_diff": -1327.4, "acos_2025": 35.58, "acos_2026": 43.18, "acos_diff": 7.6, "tacos_2025": 20.93, "tacos_2026": 27.85, "tacos_diff": 6.92, "ad_sales_2025": 7494.11, "ad_sales_2026": 3101.69, "ad_sales_diff": -4392.42, "overall_sales_2025": 12738.94, "overall_sales_2026": 4809.51, "overall_sales_diff": -7929.43, "imp_2025": 501240, "imp_2026": 310240, "imp_diff": -191000, "ctr_2025": 0.52, "ctr_2026": 0.45, "ctr_diff": -0.07, "cvr_2025": 2.61, "cvr_2026": 1.93, "cvr_diff": -0.68, "is_new": false, "is_spend_down": true},
+            {"sku": "XL-RING-TOSS", "spend_2025": 1268.92, "spend_2026": 412.93, "spend_diff": -855.99, "acos_2025": 17.44, "acos_2026": 9.49, "acos_diff": -7.95, "tacos_2025": 4.19, "tacos_2026": 1.63, "tacos_diff": -2.56, "ad_sales_2025": 7277.78, "ad_sales_2026": 4350.47, "ad_sales_diff": -2927.31, "overall_sales_2025": 30253.12, "overall_sales_2026": 25410.43, "overall_sales_diff": -4842.69, "imp_2025": 381240, "imp_2026": 120510, "imp_diff": -260730, "ctr_2025": 0.48, "ctr_2026": 0.38, "ctr_diff": -0.1, "cvr_2025": 4.86, "cvr_2026": 12.45, "cvr_diff": 7.59, "is_new": false, "is_spend_down": true},
+            {"sku": "LY-BOX", "spend_2025": 1251.22, "spend_2026": 842.99, "spend_diff": -408.23, "acos_2025": 18.23, "acos_2026": 23.74, "acos_diff": 5.51, "tacos_2025": 16.93, "tacos_2026": 21.63, "tacos_diff": 4.7, "ad_sales_2025": 6863.71, "ad_sales_2026": 3551.59, "ad_sales_diff": -3312.12, "overall_sales_2025": 7390.59, "overall_sales_2026": 3897.46, "overall_sales_diff": -3493.13, "imp_2025": 210512, "imp_2026": 150240, "imp_diff": -60272, "ctr_2025": 0.58, "ctr_2026": 0.51, "ctr_diff": -0.07, "cvr_2025": 3.69, "cvr_2026": 3.79, "cvr_diff": 0.1, "is_new": false, "is_spend_down": true},
+            {"sku": "EVA-CHK-TIC", "spend_2025": 975.63, "spend_2026": 1113.45, "spend_diff": 137.82, "acos_2025": 15.31, "acos_2026": 49.66, "acos_diff": 34.35, "tacos_2025": 22.99, "tacos_2026": 24.83, "tacos_diff": 1.84, "ad_sales_2025": 6371.05, "ad_sales_2026": 2242.17, "ad_sales_diff": -4128.88, "overall_sales_2025": 4244.13, "overall_sales_2026": 4483.97, "overall_sales_diff": 239.84, "imp_2025": 406358, "imp_2026": 317258, "imp_diff": -89100, "ctr_2025": 0.22, "ctr_2026": 0.28, "ctr_diff": 0.06, "cvr_2025": 6.26, "cvr_2026": 3.57, "cvr_diff": -2.69, "is_new": false, "is_spend_down": false},
+            {"sku": "PARTY-TOWER", "spend_2025": 1959.18, "spend_2026": 731.85, "spend_diff": -1227.33, "acos_2025": 32.09, "acos_2026": 33.74, "acos_diff": 1.65, "tacos_2025": 21.45, "tacos_2026": 18.49, "tacos_diff": -2.96, "ad_sales_2025": 6105.03, "ad_sales_2026": 2169.31, "ad_sales_diff": -3935.72, "overall_sales_2025": 9134.6, "overall_sales_2026": 3958.68, "overall_sales_diff": -5175.92, "imp_2025": 390120, "imp_2026": 140510, "imp_diff": -249610, "ctr_2025": 0.49, "ctr_2026": 0.42, "ctr_diff": -0.07, "cvr_2025": 10.1, "cvr_2026": 11.69, "cvr_diff": 1.59, "is_new": false, "is_spend_down": true},
+            {"sku": "GIANT-4-WALL", "spend_2025": 1432.51, "spend_2026": 1078.8, "spend_diff": -353.71, "acos_2025": 23.56, "acos_2026": 30.83, "acos_diff": 7.27, "tacos_2025": 16.47, "tacos_2026": 14.99, "tacos_diff": -1.48, "ad_sales_2025": 6080.14, "ad_sales_2026": 3499.34, "ad_sales_diff": -2580.8, "overall_sales_2025": 8698.45, "overall_sales_2026": 7198.48, "overall_sales_diff": -1499.97, "imp_2025": 305381, "imp_2026": 230654, "imp_diff": -74727, "ctr_2025": 0.55, "ctr_2026": 0.59, "ctr_diff": 0.04, "cvr_2025": 3.45, "cvr_2026": 2.52, "cvr_diff": -0.93, "is_new": false, "is_spend_down": true},
+            {"sku": "LADDER-TOSS-OAK", "spend_2025": 1176.34, "spend_2026": 2779.69, "spend_diff": 1603.35, "acos_2025": 19.85, "acos_2026": 21.5, "acos_diff": 1.65, "tacos_2025": 8.36, "tacos_2026": 14.58, "tacos_diff": 6.22, "ad_sales_2025": 5925.9, "ad_sales_2026": 12927.59, "ad_sales_diff": 7001.69, "overall_sales_2025": 14074.75, "overall_sales_2026": 19060.14, "overall_sales_diff": 4985.39, "imp_2025": 210250, "imp_2026": 480120, "imp_diff": 269870, "ctr_2025": 0.62, "ctr_2026": 0.58, "ctr_diff": -0.04, "cvr_2025": 4.75, "cvr_2026": 4.99, "cvr_diff": 0.24, "is_new": false, "is_spend_down": false},
+            {"sku": "CONEY-ARCADE-POP-UP", "spend_2025": 3210.62, "spend_2026": 664.67, "spend_diff": -2545.95, "acos_2025": 54.22, "acos_2026": 42.94, "acos_diff": -11.28, "tacos_2025": 44.12, "tacos_2026": 36.98, "tacos_diff": -7.14, "ad_sales_2025": 5921.59, "ad_sales_2026": 1547.81, "ad_sales_diff": -4373.78, "overall_sales_2025": 7276.33, "overall_sales_2026": 1797.5, "overall_sales_diff": -5478.83, "imp_2025": 747816, "imp_2026": 134299, "imp_diff": -613517, "ctr_2025": 0.37, "ctr_2026": 0.39, "ctr_diff": 0.02, "cvr_2025": 5.27, "cvr_2026": 6.92, "cvr_diff": 1.65, "is_new": false, "is_spend_down": true},
+            {"sku": "LY-9W3I-ZKFL", "spend_2025": 2234.17, "spend_2026": 1423.9, "spend_diff": -810.27, "acos_2025": 39.58, "acos_2026": 34.27, "acos_diff": -5.31, "tacos_2025": 34.47, "tacos_2026": 21.07, "tacos_diff": -13.4, "ad_sales_2025": 5645.14, "ad_sales_2026": 4155.46, "ad_sales_diff": -1489.68, "overall_sales_2025": 6480.56, "overall_sales_2026": 6759.08, "overall_sales_diff": 278.52, "imp_2025": 350120, "imp_2026": 210240, "imp_diff": -139880, "ctr_2025": 0.51, "ctr_2026": 0.48, "ctr_diff": -0.03, "cvr_2025": 2.46, "cvr_2026": 3.17, "cvr_diff": 0.71, "is_new": false, "is_spend_down": true},
+            {"sku": "K-DARTS-XL", "spend_2025": 841.24, "spend_2026": 2440.83, "spend_diff": 1599.59, "acos_2025": 16.89, "acos_2026": 50.14, "acos_diff": 33.25, "tacos_2025": 4.43, "tacos_2026": 11.89, "tacos_diff": 7.46, "ad_sales_2025": 4981.22, "ad_sales_2026": 4867.57, "ad_sales_diff": -113.65, "overall_sales_2025": 18979.27, "overall_sales_2026": 20533.65, "overall_sales_diff": 1554.38, "imp_2025": 180250, "imp_2026": 420510, "imp_diff": 240260, "ctr_2025": 0.58, "ctr_2026": 0.45, "ctr_diff": -0.13, "cvr_2025": 2.3, "cvr_2026": 1.16, "cvr_diff": -1.14, "is_new": false, "is_spend_down": false},
+            {"sku": "WO-GREEN-SML", "spend_2025": 1427.2, "spend_2026": 2160.18, "spend_diff": 732.98, "acos_2025": 29.98, "acos_2026": 38.71, "acos_diff": 8.73, "tacos_2025": 45.18, "tacos_2026": 41.64, "tacos_diff": -3.54, "ad_sales_2025": 4760.63, "ad_sales_2026": 5580.14, "ad_sales_diff": 819.51, "overall_sales_2025": 3158.77, "overall_sales_2026": 5187.56, "overall_sales_diff": 2028.79, "imp_2025": 210512, "imp_2026": 310240, "imp_diff": 99728, "ctr_2025": 0.61, "ctr_2026": 0.55, "ctr_diff": -0.06, "cvr_2025": 7.24, "cvr_2026": 7.44, "cvr_diff": 0.2, "is_new": false, "is_spend_down": false},
+            {"sku": "GIANT-RCL", "spend_2025": 2323.51, "spend_2026": 1399.39, "spend_diff": -924.12, "acos_2025": 49.79, "acos_2026": 35.15, "acos_diff": -14.64, "tacos_2025": 39.15, "tacos_2026": 26.77, "tacos_diff": -12.38, "ad_sales_2025": 4666.86, "ad_sales_2026": 3981.61, "ad_sales_diff": -685.25, "overall_sales_2025": 5934.31, "overall_sales_2026": 5227.69, "overall_sales_diff": -706.62, "imp_2025": 310240, "imp_2026": 180510, "imp_diff": -129730, "ctr_2025": 0.48, "ctr_2026": 0.42, "ctr_diff": -0.06, "cvr_2025": 6.98, "cvr_2026": 10.82, "cvr_diff": 3.84, "is_new": false, "is_spend_down": true},
+            {"sku": "SHUFFLE-CURLING-TABLE", "spend_2025": 1320.06, "spend_2026": 909.11, "spend_diff": -410.95, "acos_2025": 28.89, "acos_2026": 39.88, "acos_diff": 10.99, "tacos_2025": 44.04, "tacos_2026": 50.52, "tacos_diff": 6.48, "ad_sales_2025": 4569.06, "ad_sales_2026": 2279.53, "ad_sales_diff": -2289.53, "overall_sales_2025": 2997.5, "overall_sales_2026": 1799.66, "overall_sales_diff": -1197.84, "imp_2025": 190240, "imp_2026": 120510, "imp_diff": -69730, "ctr_2025": 0.52, "ctr_2026": 0.46, "ctr_diff": -0.06, "cvr_2025": 4.65, "cvr_2026": 3.79, "cvr_diff": -0.86, "is_new": false, "is_spend_down": true},
+            {"sku": "HOOK-RING-WALL-ARM", "spend_2025": 1249.12, "spend_2026": 1451.41, "spend_diff": 202.29, "acos_2025": 30.71, "acos_2026": 27.86, "acos_diff": -2.85, "tacos_2025": 25.41, "tacos_2026": 19.67, "tacos_diff": -5.74, "ad_sales_2025": 4067.02, "ad_sales_2026": 5209.86, "ad_sales_diff": 1142.84, "overall_sales_2025": 4916.86, "overall_sales_2026": 7378.41, "overall_sales_diff": 2461.55, "imp_2025": 180510, "imp_2026": 210240, "imp_diff": 29730, "ctr_2025": 0.62, "ctr_2026": 0.58, "ctr_diff": -0.04, "cvr_2025": 5.27, "cvr_2026": 6.64, "cvr_diff": 1.37, "is_new": false, "is_spend_down": false},
+            {"sku": "DITTLE-OAK-SML", "spend_2025": 2303.04, "spend_2026": 1156.1, "spend_diff": -1146.94, "acos_2025": 67.85, "acos_2026": 41.3, "acos_diff": -26.55, "tacos_2025": 41.88, "tacos_2026": 21.67, "tacos_diff": -20.21, "ad_sales_2025": 3394.12, "ad_sales_2026": 2799.15, "ad_sales_diff": -594.97, "overall_sales_2025": 5499.21, "overall_sales_2026": 5333.72, "overall_sales_diff": -165.49, "imp_2025": 1435851, "imp_2026": 269636, "imp_diff": -1166215, "ctr_2025": 0.23, "ctr_2026": 0.64, "ctr_diff": 0.41, "cvr_2025": 2.71, "cvr_2026": 4.83, "cvr_diff": 2.12, "is_new": false, "is_spend_down": true},
+            {"sku": "YRDZ-WOOD", "spend_2025": 1388.58, "spend_2026": 2506.67, "spend_diff": 1118.09, "acos_2025": 42.14, "acos_2026": 35.56, "acos_diff": -6.58, "tacos_2025": 17.78, "tacos_2026": 28.24, "tacos_diff": 10.46, "ad_sales_2025": 3295.09, "ad_sales_2026": 7048.5, "ad_sales_diff": 3753.41, "overall_sales_2025": 7811.9, "overall_sales_2026": 8876.25, "overall_sales_diff": 1064.35, "imp_2025": 150240, "imp_2026": 310240, "imp_diff": 160000, "ctr_2025": 0.58, "ctr_2026": 0.52, "ctr_diff": -0.06, "cvr_2025": 4.13, "cvr_2026": 5.33, "cvr_diff": 1.2, "is_new": false, "is_spend_down": false},
+            {"sku": "DUNZO", "spend_2025": 3323.77, "spend_2026": 441.33, "spend_diff": -2882.44, "acos_2025": 111.43, "acos_2026": 51.94, "acos_diff": -59.49, "tacos_2025": 103.75, "tacos_2026": 54.5, "tacos_diff": -49.25, "ad_sales_2025": 2982.92, "ad_sales_2026": 849.75, "ad_sales_diff": -2133.17, "overall_sales_2025": 3203.75, "overall_sales_2026": 809.73, "overall_sales_diff": -2394.02, "imp_2025": 729906, "imp_2026": 65780, "imp_diff": -664126, "ctr_2025": 0.65, "ctr_2026": 0.92, "ctr_diff": 0.27, "cvr_2025": 1.87, "cvr_2026": 4.14, "cvr_diff": 2.27, "is_new": false, "is_spend_down": true},
+            {"sku": "SHOTS-6C", "spend_2025": 1358.7, "spend_2026": 11.21, "spend_diff": -1347.49, "acos_2025": 45.68, "acos_2026": 0.0, "acos_diff": -45.68, "tacos_2025": 40.46, "tacos_2026": 0.0, "tacos_diff": -40.46, "ad_sales_2025": 2974.18, "ad_sales_2026": 0.0, "ad_sales_diff": -2974.18, "overall_sales_2025": 3357.86, "overall_sales_2026": 0.0, "overall_sales_diff": -3357.86, "imp_2025": 180240, "imp_2026": 1200, "imp_diff": -179040, "ctr_2025": 0.58, "ctr_2026": 0.25, "ctr_diff": -0.33, "cvr_2025": 15.98, "cvr_2026": 0.0, "cvr_diff": -15.98, "is_new": false, "is_spend_down": true},
+            {"sku": "WO-RED-1", "spend_2025": 966.84, "spend_2026": 987.72, "spend_diff": 20.88, "acos_2025": 35.41, "acos_2026": 55.5, "acos_diff": 20.09, "tacos_2025": 25.46, "tacos_2026": 21.96, "tacos_diff": -3.5, "ad_sales_2025": 2730.17, "ad_sales_2026": 1779.53, "ad_sales_diff": -950.64, "overall_sales_2025": 3796.8, "overall_sales_2026": 4498.58, "overall_sales_diff": 701.78, "imp_2025": 140240, "imp_2026": 150240, "imp_diff": 10000, "ctr_2025": 0.62, "ctr_2026": 0.58, "ctr_diff": -0.04, "cvr_2025": 5.75, "cvr_2026": 4.02, "cvr_diff": -1.73, "is_new": false, "is_spend_down": false},
+            {"sku": "WO-QFUG-5V6M", "spend_2025": 1300.73, "spend_2026": 725.42, "spend_diff": -575.31, "acos_2025": 48.86, "acos_2026": 38.88, "acos_diff": -9.98, "tacos_2025": 25.15, "tacos_2026": 19.63, "tacos_diff": -5.52, "ad_sales_2025": 2662.31, "ad_sales_2026": 1865.54, "ad_sales_diff": -796.77, "overall_sales_2025": 5172.16, "overall_sales_2026": 3694.64, "overall_sales_diff": -1477.52, "imp_2025": 190240, "imp_2026": 110240, "imp_diff": -80000, "ctr_2025": 0.55, "ctr_2026": 0.49, "ctr_diff": -0.06, "cvr_2025": 5.05, "cvr_2026": 7.04, "cvr_diff": 1.99, "is_new": false, "is_spend_down": true},
+            {"sku": "SCR-KEEPER-WOOD-MAG", "spend_2025": 624.1, "spend_2026": 229.53, "spend_diff": -394.57, "acos_2025": 26.01, "acos_2026": 32.87, "acos_diff": 6.86, "tacos_2025": 22.29, "tacos_2026": 12.86, "tacos_diff": -9.43, "ad_sales_2025": 2399.58, "ad_sales_2026": 698.31, "ad_sales_diff": -1701.27, "overall_sales_2025": 2799.53, "overall_sales_2026": 1784.57, "overall_sales_diff": -1014.96, "imp_2025": 120240, "imp_2026": 50240, "imp_diff": -70000, "ctr_2025": 0.61, "ctr_2026": 0.52, "ctr_diff": -0.09, "cvr_2025": 3.56, "cvr_2026": 2.3, "cvr_diff": -1.26, "is_new": false, "is_spend_down": true},
+            {"sku": "TIC-WOOD", "spend_2025": 774.74, "spend_2026": 788.47, "spend_diff": 13.73, "acos_2025": 41.1, "acos_2026": 29.59, "acos_diff": -11.51, "tacos_2025": 22.2, "tacos_2026": 20.38, "tacos_diff": -1.82, "ad_sales_2025": 1885.18, "ad_sales_2026": 2664.78, "ad_sales_diff": 779.6, "overall_sales_2025": 3490.17, "overall_sales_2026": 3868.27, "overall_sales_diff": 378.1, "imp_2025": 110240, "imp_2026": 120240, "imp_diff": 10000, "ctr_2025": 0.58, "ctr_2026": 0.55, "ctr_diff": -0.03, "cvr_2025": 6.72, "cvr_2026": 7.88, "cvr_diff": 1.16, "is_new": false, "is_spend_down": false},
+            {"sku": "HOOK-DARTS-10IN-RED-BLACK-WHITE", "spend_2025": 727.37, "spend_2026": 397.9, "spend_diff": -329.47, "acos_2025": 39.44, "acos_2026": 38.27, "acos_diff": -1.17, "tacos_2025": 33.19, "tacos_2026": 39.22, "tacos_diff": 6.03, "ad_sales_2025": 1844.34, "ad_sales_2026": 1039.63, "ad_sales_diff": -804.71, "overall_sales_2025": 2191.47, "overall_sales_2026": 1014.55, "overall_sales_diff": -1176.92, "imp_2025": 100240, "imp_2026": 60240, "imp_diff": -40000, "ctr_2025": 0.62, "ctr_2026": 0.58, "ctr_diff": -0.04, "cvr_2025": 6.94, "cvr_2026": 6.02, "cvr_diff": -0.92, "is_new": false, "is_spend_down": true},
+            {"sku": "CONEY-ISLAND-CHIP", "spend_2025": 747.87, "spend_2026": 629.09, "spend_diff": -118.78, "acos_2025": 41.91, "acos_2026": 44.0, "acos_diff": 2.09, "tacos_2025": 36.89, "tacos_2026": 52.88, "tacos_diff": 15.99, "ad_sales_2025": 1784.6, "ad_sales_2026": 1429.72, "ad_sales_diff": -354.88, "overall_sales_2025": 2027.43, "overall_sales_2026": 1189.75, "overall_sales_diff": -837.68, "imp_2025": 149702, "imp_2026": 217410, "imp_diff": 67708, "ctr_2025": 0.47, "ctr_2026": 0.28, "ctr_diff": -0.19, "cvr_2025": 3.4, "cvr_2026": 3.31, "cvr_diff": -0.09, "is_new": false, "is_spend_down": true},
+            {"sku": "MAT-CHK-TIC-3FT", "spend_2025": 541.45, "spend_2026": 384.68, "spend_diff": -156.77, "acos_2025": 32.36, "acos_2026": 32.51, "acos_diff": 0.15, "tacos_2025": 16.04, "tacos_2026": 11.45, "tacos_diff": -4.59, "ad_sales_2025": 1673.18, "ad_sales_2026": 1183.24, "ad_sales_diff": -489.94, "overall_sales_2025": 3375.91, "overall_sales_2026": 3359.15, "overall_sales_diff": -16.76, "imp_2025": 90240, "imp_2026": 60240, "imp_diff": -30000, "ctr_2025": 0.58, "ctr_2026": 0.52, "ctr_diff": -0.06, "cvr_2025": 8.22, "cvr_2026": 10.86, "cvr_diff": 2.64, "is_new": false, "is_spend_down": true},
+            {"sku": "K-DARTS-BALLS", "spend_2025": 163.43, "spend_2026": 80.49, "spend_diff": -82.94, "acos_2025": 11.68, "acos_2026": 3.95, "acos_diff": -7.73, "tacos_2025": 5.07, "tacos_2026": 2.7, "tacos_diff": -2.37, "ad_sales_2025": 1399.64, "ad_sales_2026": 2039.56, "ad_sales_diff": 639.92, "overall_sales_2025": 3224.31, "overall_sales_2026": 2976.17, "overall_sales_diff": -248.14, "imp_2025": 40240, "imp_2026": 25240, "imp_diff": -15000, "ctr_2025": 0.65, "ctr_2026": 0.58, "ctr_diff": -0.07, "cvr_2025": 7.66, "cvr_2026": 19.13, "cvr_diff": 11.47, "is_new": false, "is_spend_down": true},
+            {"sku": "SHOTS-6C-TALL", "spend_2025": 911.26, "spend_2026": 0.0, "spend_diff": -911.26, "acos_2025": 70.03, "acos_2026": 0.0, "acos_diff": -70.03, "tacos_2025": 43.43, "tacos_2026": 0.0, "tacos_diff": -43.43, "ad_sales_2025": 1301.17, "ad_sales_2026": 0.0, "ad_sales_diff": -1301.17, "overall_sales_2025": 2098.51, "overall_sales_2026": 0.0, "overall_sales_diff": -2098.51, "imp_2025": 110240, "imp_2026": 0, "imp_diff": -110240, "ctr_2025": 0.55, "ctr_2026": 0.0, "ctr_diff": -0.55, "cvr_2025": 10.23, "cvr_2026": 0.0, "cvr_diff": -10.23, "is_new": false, "is_spend_down": true},
+            {"sku": "MAT-CHK-CHESS", "spend_2025": 600.12, "spend_2026": 1382.41, "spend_diff": 782.29, "acos_2025": 51.28, "acos_2026": 41.01, "acos_diff": -10.27, "tacos_2025": 25.23, "tacos_2026": 47.79, "tacos_diff": 22.56, "ad_sales_2025": 1170.26, "ad_sales_2026": 3370.87, "ad_sales_diff": 2200.61, "overall_sales_2025": 2378.6, "overall_sales_2026": 2892.46, "overall_sales_diff": 513.86, "imp_2025": 80240, "imp_2026": 140240, "imp_diff": 60000, "ctr_2025": 0.62, "ctr_2026": 0.55, "ctr_diff": -0.07, "cvr_2025": 4.22, "cvr_2026": 6.35, "cvr_diff": 2.13, "is_new": false, "is_spend_down": false},
+            {"sku": "KUBB-MALLET-CRATE-NAT", "spend_2025": 346.45, "spend_2026": 332.7, "spend_diff": -13.75, "acos_2025": 36.79, "acos_2026": 20.37, "acos_diff": -16.42, "tacos_2025": 99.0, "tacos_2026": 8.49, "tacos_diff": -90.51, "ad_sales_2025": 941.8, "ad_sales_2026": 1633.69, "ad_sales_diff": 691.89, "overall_sales_2025": 349.95, "overall_sales_2026": 3917.28, "overall_sales_diff": 3567.33, "imp_2025": 35240, "imp_2026": 42000, "imp_diff": 6760, "ctr_2025": 0.68, "ctr_2026": 0.61, "ctr_diff": -0.07, "cvr_2025": 5.02, "cvr_2026": 8.59, "cvr_diff": 3.57, "is_new": false, "is_spend_down": true},
+            {"sku": "NINJA-TOSS", "spend_2025": 650.56, "spend_2026": 77.34, "spend_diff": -573.22, "acos_2025": 71.51, "acos_2026": 18.77, "acos_diff": -52.74, "tacos_2025": 40.63, "tacos_2026": 8.72, "tacos_diff": -31.91, "ad_sales_2025": 909.66, "ad_sales_2026": 411.97, "ad_sales_diff": -497.69, "overall_sales_2025": 1601.22, "overall_sales_2026": 887.32, "overall_sales_diff": -713.9, "imp_2025": 70240, "imp_2026": 15240, "imp_diff": -55000, "ctr_2025": 0.58, "ctr_2026": 0.48, "ctr_diff": -0.1, "cvr_2025": 6.39, "cvr_2026": 8.22, "cvr_diff": 1.83, "is_new": false, "is_spend_down": true},
+            {"sku": "YRDZ-SCR", "spend_2025": 378.97, "spend_2026": 102.28, "spend_diff": -276.69, "acos_2025": 51.04, "acos_2026": 40.61, "acos_diff": -10.43, "tacos_2025": 47.83, "tacos_2026": 13.81, "tacos_diff": -34.02, "ad_sales_2025": 742.48, "ad_sales_2026": 251.85, "ad_sales_diff": -490.63, "overall_sales_2025": 792.31, "overall_sales_2026": 740.43, "overall_sales_diff": -51.88, "imp_2025": 50240, "imp_2026": 20240, "imp_diff": -30000, "ctr_2025": 0.65, "ctr_2026": 0.55, "ctr_diff": -0.1, "cvr_2025": 14.68, "cvr_2026": 13.51, "cvr_diff": -1.17, "is_new": false, "is_spend_down": true},
+            {"sku": "COIN-DROP", "spend_2025": 414.89, "spend_2026": 318.99, "spend_diff": -95.9, "acos_2025": 58.8, "acos_2026": 40.92, "acos_diff": -17.88, "tacos_2025": 36.61, "tacos_2026": 24.23, "tacos_diff": -12.38, "ad_sales_2025": 705.62, "ad_sales_2026": 779.63, "ad_sales_diff": 74.01, "overall_sales_2025": 1133.37, "overall_sales_2026": 1316.26, "overall_sales_diff": 182.89, "imp_2025": 77858, "imp_2026": 36305, "imp_diff": -41553, "ctr_2025": 0.48, "ctr_2026": 0.74, "ctr_diff": 0.26, "cvr_2025": 8.75, "cvr_2026": 11.94, "cvr_diff": 3.19, "is_new": false, "is_spend_down": true},
+            {"sku": "XL-RING-TOSS-PVC-ROPE", "spend_2025": 472.11, "spend_2026": 314.01, "spend_diff": -158.1, "acos_2025": 70.49, "acos_2026": 73.06, "acos_diff": 2.57, "tacos_2025": 33.79, "tacos_2026": 37.05, "tacos_diff": 3.26, "ad_sales_2025": 669.75, "ad_sales_2026": 429.8, "ad_sales_diff": -239.95, "overall_sales_2025": 1397.36, "overall_sales_2026": 847.55, "overall_sales_diff": -549.81, "imp_2025": 45240, "imp_2026": 30240, "imp_diff": -15000, "ctr_2025": 0.58, "ctr_2026": 0.52, "ctr_diff": -0.06, "cvr_2025": 4.96, "cvr_2026": 5.1, "cvr_diff": 0.14, "is_new": false, "is_spend_down": true},
+            {"sku": "HOOK-RING-2P", "spend_2025": 314.21, "spend_2026": 1569.7, "spend_diff": 1255.49, "acos_2025": 48.96, "acos_2026": 47.97, "acos_diff": -0.99, "tacos_2025": 22.72, "tacos_2026": 46.42, "tacos_diff": 23.7, "ad_sales_2025": 641.73, "ad_sales_2026": 3272.28, "ad_sales_diff": 2630.55, "overall_sales_2025": 1383.07, "overall_sales_2026": 3381.72, "overall_sales_diff": 1998.65, "imp_2025": 30240, "imp_2026": 120240, "imp_diff": 90000, "ctr_2025": 0.65, "ctr_2026": 0.58, "ctr_diff": -0.07, "cvr_2025": 11.2, "cvr_2026": 14.2, "cvr_diff": 3.0, "is_new": false, "is_spend_down": false},
+            {"sku": "SPIDER-SKULL-TOSS", "spend_2025": 516.15, "spend_2026": 522.94, "spend_diff": 6.79, "acos_2025": 133.77, "acos_2026": 46.29, "acos_diff": -87.48, "tacos_2025": 39.87, "tacos_2026": 21.67, "tacos_diff": -18.2, "ad_sales_2025": 385.85, "ad_sales_2026": 1129.56, "ad_sales_diff": 743.71, "overall_sales_2025": 1294.59, "overall_sales_2026": 2413.75, "overall_sales_diff": 1119.16, "imp_2025": 40240, "imp_2026": 42000, "imp_diff": 1760, "ctr_2025": 0.55, "ctr_2026": 0.52, "ctr_diff": -0.03, "cvr_2025": 4.98, "cvr_2026": 13.76, "cvr_diff": 8.78, "is_new": false, "is_spend_down": false},
+            {"sku": "GIANT-GOLF-DARTS-BALLS", "spend_2025": 73.55, "spend_2026": 1.66, "spend_diff": -71.89, "acos_2025": 19.89, "acos_2026": 0.0, "acos_diff": -19.89, "tacos_2025": 5.15, "tacos_2026": 0.25, "tacos_diff": -4.9, "ad_sales_2025": 369.84, "ad_sales_2026": 0.0, "ad_sales_diff": -369.84, "overall_sales_2025": 1427.12, "overall_sales_2026": 659.7, "overall_sales_diff": -767.42, "imp_2025": 12000, "imp_2026": 500, "imp_diff": -11500, "ctr_2025": 0.65, "ctr_2026": 0.2, "ctr_diff": -0.45, "cvr_2025": 14.1, "cvr_2026": 0.0, "cvr_diff": -14.1, "is_new": false, "is_spend_down": true},
+            {"sku": "HOOK-RING-WALL-ARM-GUITAR", "spend_2025": 337.8, "spend_2026": 0.0, "spend_diff": -337.8, "acos_2025": 93.85, "acos_2026": 0.0, "acos_diff": -93.85, "tacos_2025": 75.08, "tacos_2026": 0.0, "tacos_diff": -75.08, "ad_sales_2025": 359.93, "ad_sales_2026": 0.0, "ad_sales_diff": -359.93, "overall_sales_2025": 449.91, "overall_sales_2026": 0.0, "overall_sales_diff": -449.91, "imp_2025": 25000, "imp_2026": 0, "imp_diff": -25000, "ctr_2025": 0.58, "ctr_2026": 0.0, "ctr_diff": -0.58, "cvr_2025": 4.83, "cvr_2026": 0.0, "cvr_diff": -4.83, "is_new": false, "is_spend_down": true},
+            {"sku": "YRDZ-SCR-5M", "spend_2025": 235.21, "spend_2026": 202.26, "spend_diff": -32.95, "acos_2025": 68.43, "acos_2026": 45.58, "acos_diff": -22.85, "tacos_2025": 25.14, "tacos_2026": 17.04, "tacos_diff": -8.1, "ad_sales_2025": 343.74, "ad_sales_2026": 443.72, "ad_sales_diff": 99.98, "overall_sales_2025": 935.44, "overall_sales_2026": 1187.26, "overall_sales_diff": 251.82, "imp_2025": 22000, "imp_2026": 18000, "imp_diff": -4000, "ctr_2025": 0.62, "ctr_2026": 0.55, "ctr_diff": -0.07, "cvr_2025": 13.24, "cvr_2026": 23.23, "cvr_diff": 9.99, "is_new": false, "is_spend_down": true},
+            {"sku": "LY-J-SHOTS-CUPS", "spend_2025": 5.12, "spend_2026": 3.71, "spend_diff": -1.41, "acos_2025": 6.4, "acos_2026": 3.87, "acos_diff": -2.53, "tacos_2025": 1.28, "tacos_2026": 1.22, "tacos_diff": -0.06, "ad_sales_2025": 79.95, "ad_sales_2026": 95.94, "ad_sales_diff": 15.99, "overall_sales_2025": 399.71, "overall_sales_2026": 303.81, "overall_sales_diff": -95.9, "imp_2025": 5000, "imp_2026": 3500, "imp_diff": -1500, "ctr_2025": 0.72, "ctr_2026": 0.65, "ctr_diff": -0.07, "cvr_2025": 11.11, "cvr_2026": 26.32, "cvr_diff": 15.21, "is_new": false, "is_spend_down": true},
+            {"sku": "SAFARI-SLING", "spend_2025": 14.57, "spend_2026": 1121.53, "spend_diff": 1106.96, "acos_2025": 40.48, "acos_2026": 52.92, "acos_diff": 12.44, "tacos_2025": 0.0, "tacos_2026": 21.55, "tacos_diff": 21.55, "ad_sales_2025": 35.99, "ad_sales_2026": 2119.31, "ad_sales_diff": 2083.32, "overall_sales_2025": 0.0, "overall_sales_2026": 5203.63, "overall_sales_diff": 5203.63, "imp_2025": 1500, "imp_2026": 140240, "imp_diff": 138740, "ctr_2025": 0.68, "ctr_2026": 0.52, "ctr_diff": -0.16, "cvr_2025": 9.8, "cvr_2026": 7.54, "cvr_diff": -2.26, "is_new": true, "is_spend_down": false},
+            {"sku": "BOGEY-PONG", "spend_2025": 3.63, "spend_2026": 1792.02, "spend_diff": 1788.39, "acos_2025": 0.0, "acos_2026": 40.61, "acos_diff": 40.61, "tacos_2025": 0.0, "tacos_2026": 24.29, "tacos_diff": 24.29, "ad_sales_2025": 0.0, "ad_sales_2026": 4412.96, "ad_sales_diff": 4412.96, "overall_sales_2025": 0.0, "overall_sales_2026": 7378.45, "overall_sales_diff": 7378.45, "imp_2025": 55, "imp_2026": 245187, "imp_diff": 245132, "ctr_2025": 7.27, "ctr_2026": 0.55, "ctr_diff": -6.72, "cvr_2025": 0.0, "cvr_2026": 5.44, "cvr_diff": 5.44, "is_new": true, "is_spend_down": false},
+            {"sku": "FLYING-RING-TAC-TOE", "spend_2025": 1.0, "spend_2026": 855.37, "spend_diff": 854.37, "acos_2025": 0.0, "acos_2026": 69.84, "acos_diff": 69.84, "tacos_2025": 0.0, "tacos_2026": 33.95, "tacos_diff": 33.95, "ad_sales_2025": 0.0, "ad_sales_2026": 1224.73, "ad_sales_diff": 1224.73, "overall_sales_2025": 0.0, "overall_sales_2026": 2519.2, "overall_sales_diff": 2519.2, "imp_2025": 62, "imp_2026": 218124, "imp_diff": 218062, "ctr_2025": 1.61, "ctr_2026": 0.31, "ctr_diff": -1.3, "cvr_2025": 0.0, "cvr_2026": 2.8, "cvr_diff": 2.8, "is_new": true, "is_spend_down": false},
+            {"sku": "GIANT-AXE-DARTS-AXES", "spend_2025": 0.0, "spend_2026": 48.99, "spend_diff": 48.99, "acos_2025": 0.0, "acos_2026": 7.19, "acos_diff": 7.19, "tacos_2025": 0.0, "tacos_2026": 1.9, "tacos_diff": 1.9, "ad_sales_2025": 0.0, "ad_sales_2026": 681.65, "ad_sales_diff": 681.65, "overall_sales_2025": 0.0, "overall_sales_2026": 2582.52, "overall_sales_diff": 2582.52, "imp_2025": 0, "imp_2026": 15240, "imp_diff": 15240, "ctr_2025": 0.0, "ctr_2026": 0.58, "ctr_diff": 0.58, "cvr_2025": 0.0, "cvr_2026": 15.91, "cvr_diff": 15.91, "is_new": true, "is_spend_down": false},
+            {"sku": "GIANT-AXE-DARTS-XL", "spend_2025": 0.0, "spend_2026": 651.19, "spend_diff": 651.19, "acos_2025": 0.0, "acos_2026": 50.1, "acos_diff": 50.1, "tacos_2025": 0.0, "tacos_2026": 10.49, "tacos_diff": 10.49, "ad_sales_2025": 0.0, "ad_sales_2026": 1299.86, "ad_sales_diff": 1299.86, "overall_sales_2025": 0.0, "overall_sales_2026": 6209.49, "overall_sales_diff": 6209.49, "imp_2025": 0, "imp_2026": 80240, "imp_diff": 80240, "ctr_2025": 0.0, "ctr_2026": 0.42, "ctr_diff": 0.42, "cvr_2025": 0.0, "cvr_2026": 1.78, "cvr_diff": 1.78, "is_new": true, "is_spend_down": false},
+            {"sku": "GIANT-GOLF-DARTS-XL", "spend_2025": 0.0, "spend_2026": 815.28, "spend_diff": 815.28, "acos_2025": 0.0, "acos_2026": 27.18, "acos_diff": 27.18, "tacos_2025": 0.0, "tacos_2026": 10.12, "tacos_diff": 10.12, "ad_sales_2025": 0.0, "ad_sales_2026": 2999.73, "ad_sales_diff": 2999.73, "overall_sales_2025": 0.0, "overall_sales_2026": 8059.37, "overall_sales_diff": 8059.37, "imp_2025": 0, "imp_2026": 110240, "imp_diff": 110240, "ctr_2025": 0.0, "ctr_2026": 0.48, "ctr_diff": 0.48, "cvr_2025": 0.0, "cvr_2026": 2.84, "cvr_diff": 2.84, "is_new": true, "is_spend_down": false},
+            {"sku": "WHOMP-BALL", "spend_2025": 0.0, "spend_2026": 1541.5, "spend_diff": 1541.5, "acos_2025": 0.0, "acos_2026": 84.0, "acos_diff": 84.0, "tacos_2025": 0.0, "tacos_2026": 29.78, "tacos_diff": 29.78, "ad_sales_2025": 0.0, "ad_sales_2026": 1835.17, "ad_sales_diff": 1835.17, "overall_sales_2025": 0.0, "overall_sales_2026": 5176.46, "overall_sales_diff": 5176.46, "imp_2025": 0, "imp_2026": 120510, "imp_diff": 120510, "ctr_2025": 0.0, "ctr_2026": 0.45, "ctr_diff": 0.45, "cvr_2025": 0.0, "cvr_2026": 10.69, "cvr_diff": 10.69, "is_new": true, "is_spend_down": false},
+            {"sku": "WOOD-CHK-TABLE-COVER", "spend_2025": 0.0, "spend_2026": 17.5, "spend_diff": 17.5, "acos_2025": 0.0, "acos_2026": 0.0, "acos_diff": 0.0, "tacos_2025": 0.0, "tacos_2026": 0.0, "tacos_diff": 0.0, "ad_sales_2025": 0.0, "ad_sales_2026": 0.0, "ad_sales_diff": 0.0, "overall_sales_2025": 0.0, "overall_sales_2026": 0.0, "overall_sales_diff": 0.0, "imp_2025": 0, "imp_2026": 1200, "imp_diff": 1200, "ctr_2025": 0.0, "ctr_2026": 0.25, "ctr_diff": 0.25, "cvr_2025": 0.0, "cvr_2026": 0.0, "cvr_diff": 0.0, "is_new": false, "is_spend_down": false}
+        ];
+
+        function formatCurr(val) {
+            if (val === null || val === undefined) return '$0';
+            const formatted = Math.abs(val).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+            return val < 0 ? `-${formatted}` : formatted;
+        }
+
+        // Formats percentage with exactly 2 decimal places
+        function formatPct2(val) { 
+            return (val || 0).toFixed(2) + '%'; 
+        }
+
+        function formatNum(val) { return (val || 0).toLocaleString('en-US'); }
+
+        function renderMasterTable(data) {
+            const tbody = document.getElementById('master-table-body');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/40 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-white">${item.sku}</td>
+                    <td class="p-3 text-right">${formatCurr(item.spend_2025)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.spend_2026)}</td>
+                    <td class="p-3 text-right ${item.spend_diff < 0 ? 'text-rose-400 font-semibold' : 'text-emerald-400'}">${formatCurr(item.spend_diff)}</td>
+                    <td class="p-3 text-right">${formatPct2(item.acos_2025)}</td>
+                    <td class="p-3 text-right ${item.acos_2026 < item.acos_2025 ? 'text-emerald-400' : 'text-rose-400'}">${formatPct2(item.acos_2026)}</td>
+                    <td class="p-3 text-right text-emerald-400 font-semibold">${formatPct2(item.tacos_2025)}</td>
+                    <td class="p-3 text-right text-emerald-400 font-semibold">${formatPct2(item.tacos_2026)}</td>
+                    <td class="p-3 text-right text-blue-300 font-semibold">${formatCurr(item.ad_sales_2025)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.ad_sales_2026)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.overall_sales_2025)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.overall_sales_2026)}</td>
+                    <td class="p-3 text-right ${item.overall_sales_diff < 0 ? 'text-rose-400 font-semibold' : 'text-emerald-400 font-semibold'}">${formatCurr(item.overall_sales_diff)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderTrafficTable(data) {
+            const tbody = document.getElementById('traffic-table-body');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/40 transition";
+                
+                const ctrDiffColor = item.ctr_diff < 0 ? 'text-rose-400' : (item.ctr_diff > 0 ? 'text-emerald-400' : 'text-gray-400');
+                const cvrDiffColor = item.cvr_diff < 0 ? 'text-rose-400' : (item.cvr_diff > 0 ? 'text-emerald-400' : 'text-gray-400');
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-white">${item.sku}</td>
+                    <td class="p-3 text-right">${formatNum(item.imp_2025)}</td>
+                    <td class="p-3 text-right">${formatNum(item.imp_2026)}</td>
+                    <td class="p-3 text-right ${item.imp_diff < 0 ? 'text-rose-400 font-semibold' : 'text-emerald-400'}">${formatNum(item.imp_diff)}</td>
+                    <td class="p-3 text-right text-cyan-400">${formatPct2(item.ctr_2025)}</td>
+                    <td class="p-3 text-right text-cyan-400">${formatPct2(item.ctr_2026)}</td>
+                    <td class="p-3 text-right font-semibold ${ctrDiffColor}">${formatPct2(item.ctr_diff)}</td>
+                    <td class="p-3 text-right text-amber-400">${formatPct2(item.cvr_2025)}</td>
+                    <td class="p-3 text-right text-amber-400">${formatPct2(item.cvr_2026)}</td>
+                    <td class="p-3 text-right font-semibold ${cvrDiffColor}">${formatPct2(item.cvr_diff)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderNewLaunchesTable() {
+            const tbody = document.getElementById('new-launches-table-body');
+            tbody.innerHTML = '';
+            const newSkus = rawData.filter(x => x.is_new).sort((a,b) => b.overall_sales_2026 - a.overall_sales_2026);
+            newSkus.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/40 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-white flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${item.sku}
+                    </td>
+                    <td class="p-3 text-right text-emerald-400 font-semibold">${formatCurr(item.overall_sales_2026)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.ad_sales_2026)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.spend_2026)}</td>
+                    <td class="p-3 text-right">${formatPct2(item.acos_2026)}</td>
+                    <td class="p-3 text-right text-emerald-400">${formatPct2(item.tacos_2026)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderDeclinersTable(data) {
+            const tbody = document.getElementById('decliners-table-body');
+            tbody.innerHTML = '';
+            const decliners = data.filter(x => x.is_spend_down).sort((a,b) => a.spend_diff - b.spend_diff);
+            decliners.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/40 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-white">${item.sku}</td>
+                    <td class="p-3 text-right">${formatCurr(item.spend_2025)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.spend_2026)}</td>
+                    <td class="p-3 text-right text-rose-400 font-semibold">${formatCurr(item.spend_diff)}</td>
+                    <td class="p-3 text-right">${formatPct2(item.acos_2025)}</td>
+                    <td class="p-3 text-right ${item.acos_2026 < item.acos_2025 ? 'text-emerald-400' : 'text-rose-400'}">${formatPct2(item.acos_2026)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.overall_sales_2025)}</td>
+                    <td class="p-3 text-right">${formatCurr(item.overall_sales_2026)}</td>
+                    <td class="p-3 text-right ${item.overall_sales_diff < 0 ? 'text-rose-400 font-semibold' : 'text-emerald-400 font-semibold'}">${formatCurr(item.overall_sales_diff)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterMasterTable() {
+            const q = document.getElementById('search-master').value.toLowerCase();
+            renderMasterTable(rawData.filter(x => x.sku.toLowerCase().includes(q)));
+        }
+
+        function filterTrafficTable() {
+            const q = document.getElementById('search-traffic').value.toLowerCase();
+            renderTrafficTable(rawData.filter(x => x.sku.toLowerCase().includes(q)));
+        }
+
+        function filterDeclinersTable() {
+            const q = document.getElementById('search-decliners').value.toLowerCase();
+            renderDeclinersTable(rawData.filter(x => x.is_spend_down && x.sku.toLowerCase().includes(q)));
+        }
+
+        function switchTab(tabKey) {
+            ['overview', 'master-table', 'traffic-metrics', 'new-launches', 'spend-decliners'].forEach(key => {
+                document.getElementById(`content-${key}`).classList.add('hidden');
+                document.getElementById(`tab-${key}`).classList.remove('active');
+            });
+            document.getElementById(`content-${tabKey}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabKey}`).classList.add('active');
+        }
+
+        function initCharts() {
+            const decliners = rawData.filter(x => x.is_spend_down).sort((a,b) => a.spend_diff - b.spend_diff).slice(0, 8);
+            
+            new Chart(document.getElementById('chartSpendCuts').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: decliners.map(x => x.sku),
+                    datasets: [
+                        { label: '2025 Ad Spend', data: decliners.map(x => x.spend_2025), backgroundColor: '#3b82f6' },
+                        { label: '2026 Ad Spend', data: decliners.map(x => x.spend_2026), backgroundColor: '#f43f5e' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#9ca3af', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af', font: { size: 9 } }, grid: { color: '#1f2937' } },
+                        y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#1f2937' } }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('chartRevenueImpact').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: decliners.map(x => x.sku),
+                    datasets: [{
+                        label: 'Overall Sales Loss ($)',
+                        data: decliners.map(x => x.overall_sales_diff),
+                        backgroundColor: decliners.map(x => x.overall_sales_diff < 0 ? '#f43f5e' : '#10b981')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#9ca3af', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af', font: { size: 9 } }, grid: { color: '#1f2937' } },
+                        y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#1f2937' } }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('chartImpressions').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: decliners.map(x => x.sku),
+                    datasets: [{
+                        label: 'Impressions Lost',
+                        data: decliners.map(x => x.imp_diff),
+                        backgroundColor: '#06b6d4'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#9ca3af', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af', font: { size: 9 } }, grid: { color: '#1f2937' } },
+                        y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#1f2937' } }
+                    }
+                }
+            });
+        }
+
+        function exportCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,SKU,2025 Spend,2026 Spend,Spend Diff,2025 ACOS,2026 ACOS,2025 TACoS,2026 TACoS,2025 Ad Sales,2026 Ad Sales,Ad Sales Diff,2025 Overall Sales,2026 Overall Sales,Overall Sales Diff,2025 Impressions,2026 Impressions,Imp Diff,2025 CTR,2026 CTR,CTR Diff,2025 CVR,2026 CVR,CVR Diff\n";
+            rawData.forEach(r => {
+                csvContent += `"${r.sku}",${r.spend_2025},${r.spend_2026},${r.spend_diff},${r.acos_2025.toFixed(2)},${r.acos_2026.toFixed(2)},${r.tacos_2025.toFixed(2)},${r.tacos_2026.toFixed(2)},${r.ad_sales_2025},${r.ad_sales_2026},${r.ad_sales_diff},${r.overall_sales_2025},${r.overall_sales_2026},${r.overall_sales_diff},${r.imp_2025},${r.imp_2026},${r.imp_diff},${r.ctr_2025.toFixed(2)},${r.ctr_2026.toFixed(2)},${r.ctr_diff.toFixed(2)},${r.cvr_2025.toFixed(2)},${r.cvr_2026.toFixed(2)},${r.cvr_diff.toFixed(2)}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Swooc_Games_Amazon_YoY_Ad_Audit_Full.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.onload = function() {
+            renderMasterTable(rawData);
+            renderTrafficTable(rawData);
+            renderNewLaunchesTable();
+            renderDeclinersTable(rawData);
+            initCharts();
+        };
+    </script>
+</body>
+</html>
